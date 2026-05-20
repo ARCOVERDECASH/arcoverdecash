@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default safety catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper utilities
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read, write: if true; // Allowed for seamless login & signup
+    }
+
+    // Transactions Collection
+    match /transactions/{transactionId} {
+      allow read, write: if true; // Allowed for withdrawal submission and approvals
+    }
+
+    // Missions Collection
+    match /missions/{missionId} {
+      allow read, write: if true; // Allowed for listing & creating micro-surveys
+    }
+
+    // Submissions Collection
+    match /submissions/{submissionId} {
+      allow read, write: if true; // Allowed for saving survey answers and audit reviews
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account registered under the Cash Arcoverde local fidelity network",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "name": { "type": "string" },
+        "password": { "type": "string" },
+        "pixKey": { "type": "string" },
+        "ip": { "type": "string" }
+      },
+      "required": ["id", "username", "name", "password", "pixKey", "ip"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Fidelity cashback awards or PIX withdrawal transfers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "user_name": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "description": { "type": "string" },
+        "created_at": { "type": "string" },
+        "pix_key_type": { "type": "string" },
+        "pix_key": { "type": "string" }
+      },
+      "required": ["id", "user_id", "user_name", "amount", "type", "status", "description", "created_at"]
+    },
+    "Mission": {
+      "title": "Mission",
+      "description": "Micro-survey or commercial task registered by local stores",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "store_name": { "type": "string" },
+        "cashback_amount": { "type": "number" },
+        "category": { "type": "string" },
+        "banner_color": { "type": "string" }
+      },
+      "required": ["id", "title", "description", "store_name", "cashback_amount", "category", "banner_color"]
+    },
+    "Submission": {
+      "title": "Submission",
+      "description": "Completed survey response answer submissions from citizens",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "user_id": { "type": "string" },
+        "mission_id": { "type": "string" },
+        "mission_title": { "type": "string" },
+        "store_name": { "type": "string" },
+        "cashback_amount": { "type": "number" },
+        "notes": { "type": "string" },
+        "proof_file_name": { "type": "string" },
+        "proof_file_data": { "type": "string" },
+        "status": { "type": "string" },
+        "created_at": { "type": "string" },
+        "rating": { "type": "number" }
+      },
+      "required": ["id", "user_id", "mission_id", "mission_title", "store_name", "cashback_amount", "status", "created_at"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Citizen user data"
+    },
+    "transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Fidelity transactional entries"
+    },
+    "missions/{missionId}": {
+      "schema": "Mission",
+      "description": "Micro surveys database"
+    },
+    "submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Completed surveyed user responses"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,400&family=Space+Grotesk:wght@400;500;600;750;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-brand-green: #10b981;
+  --color-brand-emerald: #059669;
+  
+  /* Overwrite default slate properties to match "Bold Typography" premium dark aesthetic */
+  --color-slate-950: #0a0a0a;
+  --color-slate-900: #111111;
+  --color-slate-850: #161616;
+  --color-slate-800: #222222;
+}
+
+/* Base style injection to enforce the core text and styling specs globally */
+body {
+  background-color: #0a0a0a;
+  color: #ffffff;
+}
+
+/* Elegant Custom scrollbar for transaction and admin lists */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(10, 10, 10, 0.4);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.4);
+}
+
