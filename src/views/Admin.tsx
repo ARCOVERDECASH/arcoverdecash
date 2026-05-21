@@ -61,8 +61,9 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
   const [newDescription, setNewDescription] = useState('');
   const [newStore, setNewStore] = useState('');
   const [newCategory, setNewCategory] = useState('Lojas da Cidade');
-  const [newAmount, setNewAmount] = useState('3.00');
+  const [newAmount, setNewAmount] = useState('0.20');
   const [newColor, setNewColor] = useState('from-purple-605 to-indigo-550');
+  const [newImage, setNewImage] = useState('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600&h=300');
 
   const handleCreateMissionSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,16 +71,17 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
       alert('Favor preencher os campos com dados válidos.');
       return;
     }
-    const valObj = parseFloat(newAmount) || 3.00;
-    db.createMission(newTitle, newDescription, newStore, valObj, newCategory, newColor);
+    const valObj = parseFloat(newAmount) || 0.20;
+    db.createMission(newTitle, newDescription, newStore, valObj, newCategory, newColor, newImage);
     
     // reset form fields
     setNewTitle('');
     setNewDescription('');
     setNewStore('');
     setNewCategory('Lojas da Cidade');
-    setNewAmount('3.00');
+    setNewAmount('0.20');
     setNewColor('from-purple-605 to-indigo-550');
+    setNewImage('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600&h=300');
     
     showNotification('success', 'Nova pesquisa criada com sucesso comercial!');
     loadDatabase();
@@ -993,6 +995,19 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
                     value={newAmount}
                     onChange={(e) => setNewAmount(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-mono text-[#10b981] font-bold focus:outline-none focus:border-[#10b981] transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 block">
+                    URL da Foto (Banner)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://exemplo.com/foto.jpg"
+                    value={newImage}
+                    onChange={(e) => setNewImage(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs font-mono text-white focus:outline-none focus:border-[#10b981] transition-colors"
                   />
                 </div>
 

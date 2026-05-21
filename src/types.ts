@@ -37,6 +37,7 @@ export interface Mission {
   category: string;
   banner_color?: string;
   is_premium?: boolean;
+  image_url?: string;
 }
 
 export interface MissionSubmission {

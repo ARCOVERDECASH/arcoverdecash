@@ -41,6 +41,8 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [surveyCooldowns, setSurveyCooldowns] = useState<Record<string, string>>({});
   
+  const [cooldownData, setCooldownData] = useState<{ onCooldown: boolean; remainingMs?: number }>({ onCooldown: false });
+  
   // Accumulated Stats
   const [answeredCount, setAnsweredCount] = useState<number>(0);
   const [totalEarned, setTotalEarned] = useState<number>(0);
@@ -50,10 +52,24 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
 
     // Setup active countdown update interval
     const countdownInterval = setInterval(() => {
-      setSurveyCooldowns(db.getSurveyCooldowns());
+      setCooldownData(db.isUserOnCooldown());
     }, 1000);
 
-    return () => clearInterval(countdownInterval);
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'cash_arcoverde_missions') {
+        loadData();
+      }
+    };
+
+    // Setup event listener for real-time mission updates
+    window.addEventListener('missions_updated', loadData);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearInterval(countdownInterval);
+      window.removeEventListener('missions_updated', loadData);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const loadData = () => {
@@ -65,7 +81,7 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
     setBalance(currentBalance);
     setMissions(currentMissions);
     setRecentTransactions(allTxs.slice(0, 4));
-    setSurveyCooldowns(db.getSurveyCooldowns());
+    setCooldownData(db.isUserOnCooldown());
     setAnsweredCount(completedSurveys.length);
     
     // Accumulate actual cashback values instead of assuming a flat R$1.00
@@ -102,8 +118,8 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
     }
   };
 
-  const regularMissions = missions.filter(m => !m.is_premium);
-  const premiumMissions = missions.filter(m => m.is_premium);
+  const regularMissions = missions.filter(m => !m.is_premium).slice(0, 10);
+  const premiumMissions = missions.filter(m => m.is_premium).slice(0, 10);
 
   const targetThreshold = 1.00;
   const progressPercent = Math.min(100, (balance / targetThreshold) * 100);
@@ -290,53 +306,58 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5" id="regular-missions-grid">
               {regularMissions.map((mission, index) => {
-                const cooldownText = getCooldownText(mission.id);
-                const isLocked = cooldownText !== null;
+                const isLocked = cooldownData.onCooldown || balance >= 1.0;
+
+                const getImageUrl = (storeName: string) => {
+                  if (storeName.includes('Bonanza')) return 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=600&h=300';
+                  if (storeName.includes('Atacarejo')) return 'https://images.unsplash.com/photo-1583258298656-9a259c98bb0a?auto=format&fit=crop&q=80&w=600&h=300';
+                  if (storeName.includes('Shell')) return 'https://images.unsplash.com/photo-1590481062970-13f56d0ea47f?auto=format&fit=crop&q=80&w=600&h=300';
+                  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600&h=300';
+                };
 
                 return (
                   <div
                     key={mission.id}
-                    className={`bg-[#111] border rounded-2xl overflow-hidden hover:shadow-2xl transition-all flex flex-col justify-between group h-full relative ${
+                    className={`bg-white border border-gray-100 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full relative ${
                       isLocked 
-                        ? 'border-white/[0.02] opacity-75' 
-                        : 'border-white/5 hover:border-[#10b981]/30'
+                        ? 'opacity-60' 
+                        : 'hover:border-emerald-200'
                     }`}
                     id={`mission-card-${mission.id}`}
                   >
                     
-                    {/* Header info */}
-                    <div className="p-4 bg-white/[0.02] border-b border-white/5 flex justify-between items-center text-[10px] font-mono">
-                      <div className="bg-black/30 border border-white/5 px-2 py-0.5 rounded text-white/50 flex items-center gap-1">
-                        {getCategoryIcon(mission.category)}
+                    {/* Mission Image */}
+                    <img 
+                      src={mission.image_url || getImageUrl(mission.store_name)} 
+                      alt={mission.title}
+                      className="w-full h-40 object-cover"
+                    />
+
+                    <div className="p-6 flex flex-col flex-1 gap-3">
+                      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest font-mono">
                         {mission.category}
                       </div>
-                      <span className="bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/25 px-2 py-0.5 rounded">
-                        Ganhe R$ {mission.cashback_amount.toFixed(2)}
-                      </span>
-                    </div>
 
-                    <div className="p-5 flex flex-col justify-between flex-1 space-y-4">
-                      <div>
-                        <h3 className="font-display font-bold text-sm text-white group-hover:text-[#10b981] transition-colors">
-                          {mission.title}
-                        </h3>
-                        <p className="text-[#10b981]/70 font-mono text-[10.5px] mt-1 font-bold">{mission.store_name}</p>
-                        <p className="text-xs text-white/45 leading-relaxed mt-2.5 line-clamp-2">
-                          {mission.description}
-                        </p>
+                      <h3 className="font-display font-bold text-xl text-gray-900 group-hover:text-[#10b981] transition-colors leading-tight">
+                        {mission.title}
+                      </h3>
+
+                      <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                        <Check className="w-4 h-4" />
+                        Recompensa Total: R$ {mission.cashback_amount.toFixed(2)}
                       </div>
 
-                      <div className="pt-3.5 border-t border-white/[0.03] flex justify-between items-center gap-3">
-                        <button
-                          onClick={() => onOpenRules(mission)}
-                          className="py-1 px-2.5 rounded bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-105 active:scale-95 text-white/60 hover:text-white text-[10px] font-mono border border-white/5 transition-all duration-200 cursor-pointer"
-                        >
-                          Mais Info
-                        </button>
-
+                      <div className="mt-auto pt-4">
                         {isLocked ? (
-                          <div className="py-1 px-2.5 rounded bg-[#222] text-amber-500 font-mono text-[10px] font-bold border border-amber-500/10 flex items-center gap-1 shrink-0 select-none">
-                            <Clock className="w-3.5 h-3.5 animate-pulse" /> {cooldownText}
+                          <div className="w-full py-4 rounded-xl bg-gray-100 text-gray-500 font-bold text-sm flex items-center justify-center gap-2 select-none">
+                            <Clock className="w-5 h-5 animate-pulse" /> 
+                            {balance >= 1.0 ? "Saldo atingido! Saque para continuar." : (() => {
+                              const ms = cooldownData.remainingMs || 0;
+                              const h = Math.floor(ms / (1000 * 60 * 60));
+                              const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+                              const s = Math.floor((ms % (1000 * 60)) / 1000);
+                              return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                            })()}
                           </div>
                         ) : (
                           <button
@@ -345,9 +366,9 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
                               localStorage.setItem('active_survey_mission_id', mission.id);
                               onNavigate('mission_review');
                             }}
-                            className="py-1.5 px-3 rounded bg-emerald-500/10 hover:bg-[#10b981] text-emerald-400 hover:text-black font-black text-[10px] transition-all duration-200 cursor-pointer border border-emerald-500/20 hover:border-transparent hover:scale-105 active:scale-95 uppercase tracking-wider font-mono flex items-center gap-1 shrink-0"
+                            className="w-full py-4 rounded-2xl bg-[#065f46] hover:bg-[#10b981] text-white font-black text-sm transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-emerald-500/30 uppercase tracking-widest flex items-center justify-center gap-2"
                           >
-                            Responder <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                            INICIAR PESQUISA
                           </button>
                         )}
                       </div>
@@ -377,75 +398,66 @@ export default function Dashboard({ onNavigate, onOpenRules }: DashboardProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5" id="premium-locked-missions-grid">
               {premiumMissions.map((mission, index) => {
                 const cooldownText = getCooldownText(mission.id);
-                const isLocked = cooldownText !== null;
+                // Premium missions are locked if on cooldown OR if balance >= 1.0
+                const isLocked = cooldownText !== null || balance >= 1.0;
+
+                const getImageUrl = (storeName: string) => {
+                  if (storeName.includes('Bonanza')) return 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=600&h=300';
+                  if (storeName.includes('Atacarejo')) return 'https://images.unsplash.com/photo-1583258298656-9a259c98bb0a?auto=format&fit=crop&q=80&w=600&h=300';
+                  if (storeName.includes('Shell')) return 'https://images.unsplash.com/photo-1590481062970-13f56d0ea47f?auto=format&fit=crop&q=80&w=600&h=300';
+                  return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=600&h=300';
+                };
 
                 return (
                   <div
                     key={mission.id}
-                    className={`bg-indigo-950/10 border transition-all duration-350 rounded-2xl overflow-hidden relative group flex flex-col justify-between h-full ${
-                      isLocked ? 'border-purple-900/15 opacity-85' : 'border-purple-500/35 hover:border-purple-400 shadow-lg shadow-purple-950/10 hover:shadow-purple-950/30'
+                    className={`bg-white border border-gray-100 rounded-3xl overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full relative ${
+                      isLocked ? 'opacity-60' : 'hover:border-purple-200'
                     }`}
                     id={`mission-card-${mission.id}`}
                   >
                     
                     {/* Visual premium overlay lock screen */}
                     {isLocked && (
-                      <div className="absolute inset-0 bg-black/75 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center z-20">
-                        <div className="p-2 bg-purple-500/10 border border-purple-500/20 text-purple-400 mb-1.5 rounded-full">
-                          <Lock className="w-4 h-4 animate-pulse" />
-                        </div>
-                        <p className="text-[11px] font-black text-purple-400 uppercase tracking-wider font-mono">Promo Bloqueada</p>
-                        <p className="text-[9px] text-white/40 mt-0.5 max-w-[200px]">Libera automaticamente em 6h ou pule a espera:</p>
-                        
-                        {/* Live Ticking Cooldown countdown */}
-                        <span className="mt-2 px-2.5 py-0.5 bg-purple-500/10 border border-purple-500/20 text-purple-300 font-mono text-[10px] font-black rounded-lg tracking-wider flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-purple-400" /> {cooldownText || "06:00:00"}
-                        </span>
-
-                        {/* Bypass/unlock button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            db.removeSurveyCooldown(mission.id);
-                            loadData();
-                          }}
-                          className="mt-3.5 px-3 py-1.5 rounded-xl bg-purple-500 hover:bg-purple-450 hover:scale-[1.03] active:scale-95 text-black font-mono text-[9px] font-black uppercase tracking-wider transition-all duration-150 cursor-pointer shadow-lg shadow-purple-500/20 flex items-center gap-1"
-                        >
-                          <Sparkles className="w-3 h-3 text-amber-300 animate-spin" /> Liberar Pesquisa R$ 3,00
-                        </button>
+                      <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-20">
+                        <Lock className="w-10 h-10 text-purple-500 mb-3" />
+                        <p className="text-sm font-bold text-gray-900 uppercase tracking-widest">Pesquisa Bloqueada</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {balance >= 1.0 ? "Saldo atingido! Saque para continuar." : `Libera em: ${cooldownText || "08:00:00"}`}
+                        </p>
                       </div>
                     )}
 
-                    {/* Background card layout */}
-                    <div className="p-4 bg-purple-950/15 border-b border-white/[0.03] flex justify-between items-center text-[10px] font-mono select-none">
-                      <div className="bg-black/30 border border-white/5 px-2 py-0.5 rounded text-white/40">
+                    {/* Mission Image */}
+                    <img 
+                      src={getImageUrl(mission.store_name)}
+                      alt={mission.title}
+                      className="w-full h-40 object-cover"
+                    />
+
+                    <div className="p-6 flex flex-col flex-1 gap-3">
+                      <div className="text-[11px] font-bold text-purple-400 uppercase tracking-widest font-mono">
                         {mission.store_name}
                       </div>
-                      <span className="bg-purple-500/15 text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded font-bold">
-                        R$ {mission.cashback_amount.toFixed(2)}
-                      </span>
-                    </div>
 
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4 select-none">
-                      <div>
-                        <h3 className="font-display font-bold text-sm text-white/80 group-hover:text-purple-400 transition-colors">
-                          {mission.title}
-                        </h3>
-                        <p className="text-white/35 text-xs mt-2 line-clamp-2">
-                          {mission.description}
-                        </p>
+                      <h3 className="font-display font-bold text-xl text-gray-900 group-hover:text-purple-600 transition-colors leading-tight">
+                        {mission.title}
+                      </h3>
+
+                      <div className="flex items-center gap-1.5 text-purple-600 font-bold text-sm">
+                        <Check className="w-4 h-4" />
+                        Recompensa Total: R$ {mission.cashback_amount.toFixed(2)}
                       </div>
 
-                      <div className="pt-3.5 border-t border-white/[0.02] flex justify-between items-center">
-                        <span className="text-[10px] font-mono text-purple-400/70 uppercase tracking-wider font-bold">Super Cashback!</span>
+                      <div className="mt-auto pt-4">
                         <button
                           onClick={() => {
                             localStorage.setItem('active_survey_mission_id', mission.id);
                             onNavigate('mission_review');
                           }}
-                          className="py-1 px-2.5 rounded bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-black font-black text-[10px] transition-all duration-200 cursor-pointer border border-purple-500/20 hover:border-transparent hover:scale-105 active:scale-95 uppercase tracking-wider font-mono flex items-center gap-1 shrink-0"
+                          className="w-full py-4 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-sm transition-all duration-300 cursor-pointer uppercase tracking-widest flex items-center justify-center gap-2"
                         >
-                          Responder <ChevronRight className="w-3 h-3" />
+                          INICIAR PESQUISA
                         </button>
                       </div>
                     </div>

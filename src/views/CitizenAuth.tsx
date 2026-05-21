@@ -253,13 +253,9 @@ export default function CitizenAuth({ onAuthSuccess, onAdminClick }: CitizenAuth
 
           {/* Test Tip */}
           <div className="mt-5 space-y-2 text-center">
-            <p className="text-xs text-[#10b981] font-display font-black tracking-tight leading-relaxed">
-              Faça seu cadastro gratuito e veja o PIX cair na conta.
-              <span className="block text-white text-[10px] font-normal font-sans opacity-75 mt-0.5">Cash Arcoverde: sua opinião vale dinheiro!</span>
-            </p>
             <p className="text-[9px] text-white/30 font-mono leading-normal">
               {isLogin 
-                ? "Dica: Você pode usar as credenciais de teste 'leandro' / '123' se preferir testar rápido."
+                ? "Conecte-se para começar a ganhar cashback."
                 : `Segurança: Cadastro limitado a 1 conta por endereço de IP de celular (${ipAddress}) para evitar abusos.`
               }
             </p>

@@ -168,21 +168,11 @@ export default function App() {
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none hidden md:block" />
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[140px] pointer-events-none hidden md:block" />
 
-      {/* Styled Smartphone Mockup Wrapper */}
-      <div className="w-full h-screen md:h-[840px] md:max-w-[420px] md:rounded-[48px] md:border-[12px] md:border-[#1e293b] md:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),_0_0_40px_rgba(16,185,129,0.12)] bg-[#0b0f19] flex flex-col justify-between overflow-hidden relative md:ring-1 md:ring-slate-800/80">
+      {/* Styled Responsive Container Instead of Smartphone Mockup */}
+      <div className="w-full min-h-screen bg-[#070b13] flex flex-col justify-between overflow-hidden relative">
         
-        {/* Notch & StatusBar for Realistic Smartphone Detail */}
-        <div className="hidden md:flex absolute top-0 left-0 right-0 h-7 bg-slate-950 items-center justify-between px-6 z-50 select-none text-[8.5px] font-mono text-slate-500 border-b border-slate-900/40">
-          <span>Cash Arcoverde</span>
-          <div className="w-18 h-4 bg-slate-900 rounded-b-xl border-x border-b border-slate-800 flex items-center justify-center shrink-0">
-            <div className="w-4 h-0.5 bg-slate-800 rounded-full" />
-            <div className="w-1.5 h-1.5 bg-slate-950 border border-slate-900 rounded-full ml-1" />
-          </div>
-          <span className="flex items-center gap-1">5G <span className="inline-block w-2.5 h-1.5 bg-emerald-400 rounded-[3px] shadow-[0_0_8px_rgba(52,211,153,0.3)]" /></span>
-        </div>
-
-        {/* Scrollable Smartphone Viewport View */}
-        <div className="flex-1 overflow-y-auto flex flex-col justify-between pt-0 md:pt-7 relative xs:text-xs">
+        {/* Scrollable Main Viewport */}
+        <div className="flex-1 overflow-y-auto flex flex-col justify-between pt-0 relative xs:text-xs">
           
           {showAuth ? (
             <CitizenAuth 
@@ -317,15 +307,17 @@ export default function App() {
               <span className="text-[8.5px] font-mono">Pesquisas</span>
             </button>
 
-            <button
-              onClick={() => handleNavigate('withdraw')}
-              className={`flex-1 py-1 flex flex-col items-center gap-0.5 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${
-                currentView === 'withdraw' ? 'text-emerald-400 font-bold' : 'text-slate-500'
-              }`}
-            >
-              <Wallet className="w-4 h-4" />
-              <span className="text-[8.5px] font-mono">Sacar PIX</span>
-            </button>
+            {citizenSession && (
+              <button
+                onClick={() => handleNavigate('withdraw')}
+                className={`flex-1 py-1 flex flex-col items-center gap-0.5 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${
+                  currentView === 'withdraw' ? 'text-emerald-400 font-bold' : 'text-slate-500'
+                }`}
+              >
+                <Wallet className="w-4 h-4" />
+                <span className="text-[8.5px] font-mono">Sacar PIX</span>
+              </button>
+            )}
 
             <button
               onClick={() => handleNavigate('admin_login')}

@@ -43,7 +43,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Avaliação de Atendimento no Bonanza',
     description: 'Responda perguntas de satisfação e qualidade sobre o Supermercado Bonanza em Arcoverde.',
     store_name: 'Supermercado Bonanza',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Supermercado',
     banner_color: 'from-amber-600 to-orange-500',
   },
@@ -52,7 +52,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Satisfação do Cliente e Organização',
     description: 'Diga o que você acha do preço, limpeza e atendimento do Novo Atacarejo em Arcoverde.',
     store_name: 'Novo Atacarejo',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Supermercado',
     banner_color: 'from-[#10b981] to-teal-600',
   },
@@ -61,7 +61,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Promoções e Atendimento do Dia',
     description: 'Sua opinião sobre promoções e estoque na Lojas Americanas da Av. Antônio Japiassu.',
     store_name: 'Lojas Americanas',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Lojas da Cidade',
     banner_color: 'from-red-600 to-rose-500',
   },
@@ -70,7 +70,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Rapidez e Atenção dos Vendedores',
     description: 'Avalie a rapidez e o atendimento das Lojas Armazém Paraíba no centro de Arcoverde.',
     store_name: 'Armazém Paraíba',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Lojas da Cidade',
     banner_color: 'from-yellow-600 to-amber-500',
   },
@@ -79,7 +79,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Medicamentos e Filas na Pague Menos',
     description: 'Avalie as filas, preços e disponibilidade de medicamentos da Pague Menos Arcoverde.',
     store_name: 'Farmácia Pague Menos',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Saúde',
     banner_color: 'from-blue-600 to-cyan-500',
   },
@@ -88,7 +88,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Estoque de Roupas na Moda & Cia',
     description: 'Avalie a variedade de roupas e atendimento da loja de departamentos Moda & Cia.',
     store_name: 'Moda & Cia Arcoverde',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Lojas da Cidade',
     banner_color: 'from-purple-600 to-indigo-500',
   },
@@ -97,7 +97,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Prazo de Entrega e Embalagem',
     description: 'Sua opinião sincera sobre a rapidez de entrega e sabor da Lanchonete Central.',
     store_name: 'Lanchonete Central',
-    cashback_amount: 1.00,
+    cashback_amount: 0.20,
     category: 'Alimentação',
     banner_color: 'from-emerald-600 to-green-500',
   },
@@ -106,17 +106,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Qualidade do Combustível e Serviço',
     description: 'Avalie a honestidade nas bombas e a qualidade do atendimento no Posto Shell.',
     store_name: 'Posto Shell Arcoverde',
-    cashback_amount: 3.00,
-    category: 'Combustível',
-    banner_color: 'from-cyan-600 to-blue-500',
-    is_premium: true,
-  },
-  {
-    id: 'm9',
-    title: 'Atendimento e Novidades Aromáticas',
-    description: 'O que você achou dos preços e perfumes expostos nas Lojas Boticário.',
-    store_name: 'O Boticário',
-    cashback_amount: 3.00,
+    cashback_amount: 0.20,
     category: 'Lojas da Cidade',
     banner_color: 'from-pink-600 to-purple-500',
     is_premium: true,
@@ -126,7 +116,7 @@ const DEFAULT_MISSIONS: Mission[] = [
     title: 'Calçados e Tempo de Espera',
     description: 'Avalie o tempo de recepção de calçados na loja física Carioca Calçados.',
     store_name: 'Carioca Calçados',
-    cashback_amount: 3.00,
+    cashback_amount: 0.20,
     category: 'Lojas da Cidade',
     banner_color: 'from-amber-600 to-yellow-500',
     is_premium: true,
@@ -348,7 +338,7 @@ class StorageService {
     return missions;
   }
 
-  createMission(title: string, description: string, storeName: string, cashbackAmount: number, category: string, bannerColor: string): Mission {
+  createMission(title: string, description: string, storeName: string, cashbackAmount: number, category: string, bannerColor: string, imageUrl: string): Mission {
     const missions = this.getMissions();
     const newMission: Mission = {
       id: `m-${Date.now()}`,
@@ -357,13 +347,17 @@ class StorageService {
       store_name: storeName.trim(),
       cashback_amount: cashbackAmount,
       category: category,
-      banner_color: bannerColor || 'from-emerald-600 to-teal-600'
+      banner_color: bannerColor || 'from-emerald-600 to-teal-600',
+      image_url: imageUrl
     };
     missions.unshift(newMission);
     this.setStorageItem('cash_arcoverde_missions', missions);
     
     // Save to Firestore Database
     setDoc(doc(firestoreDb, 'missions', newMission.id), newMission);
+
+    // Notify listeners
+    window.dispatchEvent(new Event('missions_updated'));
 
     return newMission;
   }
@@ -372,6 +366,14 @@ class StorageService {
     const missions = this.getMissions();
     const updated = missions.filter(m => m.id !== id);
     this.setStorageItem('cash_arcoverde_missions', updated);
+    
+    // Remove from Firestore Database
+    import('firebase/firestore').then(({ deleteDoc, doc }) => {
+      deleteDoc(doc(firestoreDb, 'missions', id));
+    });
+
+    // Notify listeners
+    window.dispatchEvent(new Event('missions_updated'));
   }
 
   getSubmissions(): MissionSubmission[] {
@@ -445,12 +447,34 @@ class StorageService {
     return newTx;
   }
 
-  getSurveyCooldowns(): Record<string, string> {
-    return this.getStorageItem<Record<string, string>>('cash_arcoverde_survey_cooldowns', {});
+  getUserLastSurveyCompletion(): string | null {
+    return localStorage.getItem('cash_arcoverde_last_survey_completion');
   }
 
-  saveSurveyCooldowns(cooldowns: Record<string, string>): void {
-    this.setStorageItem('cash_arcoverde_survey_cooldowns', cooldowns);
+  setUserLastSurveyCompletion(time: string): void {
+    localStorage.setItem('cash_arcoverde_last_survey_completion', time);
+  }
+
+  isUserOnCooldown(): { onCooldown: boolean; remainingMs?: number } {
+    const submissions = this.getSubmissions();
+    const activeUser = this.getCurrentUser();
+    if (!activeUser) return { onCooldown: false };
+
+    const eightHoursMs = 8 * 60 * 60 * 1000;
+    const now = Date.now();
+
+    const userSubmissions = submissions.filter(
+      s => s.user_id === activeUser.id && (now - new Date(s.created_at).getTime()) < eightHoursMs
+    );
+
+    if (userSubmissions.length >= 10) {
+      // Find the oldest submission in the current 8h window to calculate remaining time
+      const oldestSub = userSubmissions.sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+      const remainingMs = eightHoursMs - (now - new Date(oldestSub.created_at).getTime());
+      return { onCooldown: true, remainingMs: Math.max(0, remainingMs) };
+    }
+
+    return { onCooldown: false };
   }
 
   isSurveyOnCooldown(missionId: string): boolean {
@@ -532,8 +556,8 @@ class StorageService {
     // Write to Firestore Database
     setDoc(doc(firestoreDb, 'submissions', newSubmission.id), newSubmission);
 
-    // Register cooldown
-    this.setSurveyCooldown(missionId);
+    // Register global 8h cooldown
+    this.setUserLastSurveyCompletion(new Date().toISOString());
 
     // Also register cash transaction to Firestore and local balance
     this.addTransaction(

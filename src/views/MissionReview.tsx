@@ -19,7 +19,8 @@ import {
   Wallet,
   Sparkles,
   Loader,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 import { db } from '../lib/supabase';
 import { Mission } from '../types';
@@ -101,12 +102,13 @@ export default function MissionReview({ onNavigate }: MissionReviewProps) {
       }
     }
     
-    // Check if this mission is actually on cooldown! Safety fallback
-    if (db.isSurveyOnCooldown(missionToLoad.id)) {
-      setErrorMessage("Esta pesquisa está no tempo de bloqueio de 6 horas. Escolha outra loja no painel!");
+    // Check if this mission or user is on cooldown!
+    if (db.isUserOnCooldown().onCooldown) {
+      // Just set error, which we will handle in rendering
+      setErrorMessage("Você já respondeu às pesquisas disponíveis. Volte em 8 horas para ganhar mais!");
+    } else {
+      setActiveMission(missionToLoad);
     }
-
-    setActiveMission(missionToLoad);
   }, []);
 
   const playClickFeedbackSound = () => {
@@ -226,6 +228,24 @@ export default function MissionReview({ onNavigate }: MissionReviewProps) {
       }
     }, 1800);
   };
+
+  if (!activeMission && errorMessage) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full py-20 p-8 text-center space-y-6" id="cooldown-screen">
+        <div className="p-4 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+          <Clock className="w-12 h-12" />
+        </div>
+        <h2 className="font-display font-black text-2xl text-white">Aguarde 8 Horas</h2>
+        <p className="text-sm text-white/50 max-w-sm">{errorMessage}</p>
+        <button 
+          onClick={() => onNavigate('dashboard')}
+          className="mt-4 px-6 py-3 bg-[#10b981] text-black font-bold rounded-xl"
+        >
+          Voltar ao Painel
+        </button>
+      </div>
+    );
+  }
 
   if (!activeMission) {
     return (

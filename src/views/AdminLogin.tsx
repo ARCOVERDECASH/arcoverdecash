@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Eye, EyeOff, ShieldCheck, HelpCircle, ArrowLeft, Building2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, HelpCircle, ArrowLeft } from 'lucide-react';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -39,22 +39,9 @@ export default function AdminLogin({ onLoginSuccess, onNavigate }: AdminLoginPro
       if (username.toLowerCase().trim() === storedUser.toLowerCase().trim() && password === storedPass) {
         onLoginSuccess();
       } else {
-        setErrorMsg('Credenciais inválidas para o portal de Arcoverde. Tente novamente ou use o Acesso Rápido.');
+        setErrorMsg('Credenciais inválidas para o portal de Arcoverde. Tente novamente.');
       }
     }, 800);
-  };
-
-  const handleQuickAccess = () => {
-    const storedUser = localStorage.getItem('cash_arcoverde_admin_username') || 'admin';
-    const storedPass = localStorage.getItem('cash_arcoverde_admin_password') || 'admin';
-    setUsername(storedUser);
-    setPassword(storedPass);
-    setErrorMsg(null);
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onLoginSuccess();
-    }, 400);
   };
 
   return (
@@ -161,25 +148,6 @@ export default function AdminLogin({ onLoginSuccess, onNavigate }: AdminLoginPro
             )}
           </button>
         </form>
-
-        {/* Demo Fast Sandbox Direct Bypass */}
-        <div className="pt-5 border-t border-white/5 space-y-4">
-          <div className="flex gap-2.5 items-start text-[10.5px] text-white/40 leading-relaxed font-sans">
-            <Building2 className="w-4 h-4 shrink-0 text-[#10b981] mt-0.5" />
-            <p>
-              <b>Ambiente de Laboratório:</b> Para facilitar sua avaliação técnica da plataforma de recompensas, use o atalho abaixo que autopreenche as credenciais em sandbox local.
-            </p>
-          </div>
-
-          <button
-            id="btn-quick-admin-login"
-            type="button"
-            onClick={handleQuickAccess}
-            className="w-full py-4 rounded-xl bg-[#10b981] hover:scale-[1.03] hover:shadow-[0_4px_25px_rgba(16,185,129,0.4)] active:scale-[0.97] text-black font-black text-xs uppercase tracking-widest transition-all duration-200 cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
-          >
-            Acesso Rápido (Demo Mode)
-          </button>
-        </div>
       </motion.div>
     </div>
   );
