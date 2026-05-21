@@ -34,7 +34,7 @@ export default function AdminLogin({ onLoginSuccess, onNavigate }: AdminLoginPro
     setTimeout(() => {
       setIsLoading(false);
       const storedUser = localStorage.getItem('cash_arcoverde_admin_username') || 'admin';
-      const storedPass = localStorage.getItem('cash_arcoverde_admin_password') || 'admin';
+      const storedPass = localStorage.getItem('cash_arcoverde_admin_password') || 'zeca71';
       
       if (username.toLowerCase().trim() === storedUser.toLowerCase().trim() && password === storedPass) {
         onLoginSuccess();

@@ -48,7 +48,27 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
   
   // Admin credentials modifying states
   const [adminUsernameInput, setAdminUsernameInput] = useState(() => localStorage.getItem('cash_arcoverde_admin_username') || 'admin');
-  const [adminPasswordInput, setAdminPasswordInput] = useState(() => localStorage.getItem('cash_arcoverde_admin_password') || 'admin');
+  const [adminPasswordInput, setAdminPasswordInput] = useState(() => localStorage.getItem('cash_arcoverde_admin_password') || 'zeca71');
+  
+  // States for password change
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleUpdateAdminPassword = () => {
+    if (newPassword !== confirmPassword) {
+      showNotification('info', 'As senhas não coincidem.');
+      return;
+    }
+    if (newPassword.length < 5) {
+      showNotification('info', 'Senha muito curta (mínimo 5 caracteres).');
+      return;
+    }
+    localStorage.setItem('cash_arcoverde_admin_password', newPassword);
+    setAdminPasswordInput(newPassword);
+    setNewPassword('');
+    setConfirmPassword('');
+    showNotification('success', 'Senha do painel admin atualizada com sucesso!');
+  };
 
   // Micro feedback states
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
@@ -107,7 +127,22 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
   // Loaded metadata
   useEffect(() => {
     loadDatabase();
+    
+    // Listen for storage changes (for local updates)
+    const handleStorageChange = () => {
+      loadDatabase();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('transactions_updated', loadDatabase);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('transactions_updated', loadDatabase);
+    };
   }, []);
+
+  // Add this to store the previous count of transactions to detect new ones
+  const [lastTxCount, setLastTxCount] = useState<number>(0);
 
   const loadDatabase = () => {
     const allTxs = db.getTransactions();
@@ -115,6 +150,17 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
     const allUsers = db.getUsers();
     const allMissions = db.getMissions();
     
+    // Check for new withdrawals (pending withdrawals)
+    const currentPendingWithdrawals = allTxs.filter(t => t.type === 'withdrawal' && t.status === 'pending');
+    const previousPendingWithdrawalsCount = transactions.filter(t => t.type === 'withdrawal' && t.status === 'pending').length;
+    
+    if (currentPendingWithdrawals.length > previousPendingWithdrawalsCount) {
+      const newWithdrawal = currentPendingWithdrawals[0];
+      showNotification('success', `⚠️ Novo pedido de saque PIX: R$ ${newWithdrawal.amount.toFixed(2)} solicitado!`);
+      
+      // Add a simple browser notification/alert if possible or just rely on the UI toast
+    }
+
     setTransactions(allTxs);
     setSubmissions(allSubs);
     setUsersList(allUsers);
@@ -1121,6 +1167,39 @@ export default function Admin({ onLogout, onNavigate }: AdminProps) {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+        {activeTab === 'change_password' && (
+          <div className="space-y-6" id="change-password-panel">
+            <div className="bg-[#111] border border-white/5 rounded-3xl p-6 lg:p-8 space-y-6 shadow-xl">
+              <h3 className="font-display font-black text-xl text-white tracking-tight">Alterar Credenciais de Acesso</h3>
+              <p className="text-xs text-white/40 font-mono">
+                Proteja seu painel administrativo definindo uma senha segura e exclusiva que apenas você conhece.
+              </p>
+              
+              <div className="space-y-4 max-w-sm">
+                <input
+                  type="password"
+                  placeholder="Nova Senha"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white font-mono text-sm"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirmar Nova Senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white font-mono text-sm"
+                />
+                <button
+                  onClick={handleUpdateAdminPassword}
+                  className="w-full py-3 bg-[#10b981] text-black font-black text-xs uppercase tracking-wider rounded-xl hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer"
+                >
+                  Atualizar Senha
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

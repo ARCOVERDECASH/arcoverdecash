@@ -390,7 +390,7 @@ class StorageService {
     if (!activeUser) return 0;
     
     return tx
-      .filter(t => t.user_id === activeUser.id && t.status === 'completed')
+      .filter(t => t.user_id === activeUser.id && (t.status === 'completed' || t.status === 'pending'))
       .reduce((acc, curr) => {
         if (curr.type === 'cashback') {
           return acc + curr.amount;
@@ -443,6 +443,9 @@ class StorageService {
 
     // Save to Firestore
     setDoc(doc(firestoreDb, 'transactions', newTx.id), newTx);
+    
+    // Notify listeners
+    window.dispatchEvent(new Event('transactions_updated'));
 
     return newTx;
   }

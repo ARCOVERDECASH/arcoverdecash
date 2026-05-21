@@ -127,7 +127,15 @@ export default function App() {
       setCurrentTime(now.toLocaleTimeString('pt-BR'));
     }, 1000);
 
-    return () => clearInterval(timer);
+    const handleStorageChange = () => {
+      setWalletBalance(db.getWalletBalance());
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [currentView, citizenSession]);
 
   const handleNavigate = (view: AppView | 'admin_login') => {
@@ -285,7 +293,14 @@ export default function App() {
               </main>
 
               {/* Compact Phone Friendly Footer */}
-              <footer className="bg-slate-950 border-t border-slate-900/60 py-3 px-3 text-center text-[8.5px] font-mono text-slate-500 shrink-0">
+              <footer 
+                className="bg-slate-950 border-t border-slate-900/60 py-3 px-3 text-center text-[8.5px] font-mono text-slate-500 shrink-0 cursor-pointer"
+                onClick={(e) => {
+                  if (e.detail === 3) {
+                    handleNavigate('admin_login');
+                  }
+                }}
+              >
                 <p className="font-semibold text-slate-400">Cash Arcoverde — Rede Fidelidade</p>
                 <p className="text-[7.5px] mt-0.5 text-slate-650">Arcoverde PE • Sandbox Mode</p>
               </footer>
@@ -318,16 +333,6 @@ export default function App() {
                 <span className="text-[8.5px] font-mono">Sacar PIX</span>
               </button>
             )}
-
-            <button
-              onClick={() => handleNavigate('admin_login')}
-              className={`flex-1 py-1 flex flex-col items-center gap-0.5 cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 ${
-                currentView === 'admin_dashboard' || currentView === 'admin_login' ? 'text-purple-400 font-bold' : 'text-slate-500'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-[8.5px] font-mono">Lojista</span>
-            </button>
           </nav>
         )}
 
@@ -447,6 +452,19 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Audio Player para o usuário */}
+      {citizenSession && (
+        <audio
+          loop
+          autoPlay
+          src="/audio.mp3"
+          onLoadedData={(e) => {
+            e.currentTarget.volume = 0.1;
+            e.currentTarget.play().catch(e => console.log("Aguardando interação do usuário para tocar áudio"));
+          }}
+        />
+      )}
 
     </div>
   );

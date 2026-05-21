@@ -70,7 +70,7 @@ export default function Withdraw({ onNavigate }: WithdrawProps) {
       case 'CPF':
         return '000.000.000-00';
       case 'Celular':
-        return '(87) 99999-0000';
+        return '99999999999';
       case 'E-mail':
         return 'seu.email@exemplo.com';
       case 'Chave Aleatória':
